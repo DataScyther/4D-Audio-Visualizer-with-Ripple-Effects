@@ -1,0 +1,497 @@
+<html><head><base href="https://4dimensi-4D%20Musical-bola%20jatuh%20dan%20berbunyi%20note%20berbeda"><title>4D Musical Spheres with Ripple Effect and Nursery Rhymes</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(to bottom, #000033, #000066);
+        color: #fff;
+      }
+      #canvas-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #ui-container {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 250px;
+        height: auto;
+        pointer-events: none;
+      }
+      .panel {
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px;
+        pointer-events: auto;
+      }
+      #instructions-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        max-width: 300px;
+      }
+      #control-panel {
+        position: static;
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
+      }
+      h1, h2 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+      button, select {
+        width: 100%;
+        margin: 5px 0;
+        padding: 8px 12px;
+        font-size: 14px;
+        background: #4a4a4a;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      button:hover, select:hover {
+        background: #5a5a5a;
+      }
+      input[type="range"] {
+        width: 100%;
+        margin: 5px 0;
+      }
+      label {
+        margin-top: 5px;
+        font-size: 14px;
+      }
+      #animation-toggle {
+        background: #4CAF50;
+      }
+      #animation-toggle.paused {
+        background: #F44336;
+      }
+      #dimension-toggle {
+        background: #2196F3;
+      }
+    </style>
+    </head>
+    <body>
+    <div id="canvas-container"></div>
+    <div id="instructions-panel" class="panel">
+      <h2>Instructions</h2>
+      <p>Experience the harmony of multidimensional motion with visual ripples.</p>
+      <ul>
+        <li>Use controls on the right to adjust settings.</li>
+        <li>Watch spheres fall and create musical notes.</li>
+        <li>Observe ripple effects when spheres hit the bottom.</li>
+        <li>Experiment with different dimensions and rhymes.</li>
+      </ul>
+      <p>Active Spheres: <span id="sphere-count">0</span></p>
+      <p>Current Dimension: <span id="current-dimension">4D</span></p>
+      <p>Current Rhyme: <span id="current-rhyme">None</span></p>
+    </div>
+    <div id="ui-container">
+      <div id="control-panel" class="panel">
+        <div class="control-group">
+          <button id="animation-toggle" onclick="toggleAnimation()">Pause Animation</button>
+          <button id="dimension-toggle" onclick="toggleDimension()">Toggle Dimension</button>
+        </div>
+        <div class="control-group">
+          <label for="gravity">Gravity: <span id="gravity-value">1</span></label>
+          <input type="range" id="gravity" min="0.1" max="2" step="0.1" value="1" onchange="changeGravity()">
+        </div>
+        <div class="control-group">
+          <label for="spawnRate">Spawn Rate: <span id="spawn-rate-value">5</span>/s</label>
+          <input type="range" id="spawnRate" min="1" max="20" step="1" value="5" onchange="changeSpawnRate()">
+        </div>
+        <div class="control-group">
+          <label for="soundType">Sound Scale:</label>
+          <select id="soundType" onchange="changeSoundType()">
+            <option value="harmonic">Harmonic</option>
+            <option value="pentatonic">Pentatonic</option>
+            <option value="chromatic">Chromatic</option>
+            <option value="microtonal">Microtonal</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="instrumentType">Instrument:</label>
+          <select id="instrumentType" onchange="changeInstrument()">
+            <option value="sine">Sine (Default)</option>
+            <option value="square">Square</option>
+            <option value="sawtooth">Sawtooth</option>
+            <option value="triangle">Triangle</option>
+            <option value="piano">Piano</option>
+            <option value="guitar">Guitar</option>
+            <option value="violin">Violin</option>
+            <option value="flute">Flute</option>
+            <option value="trumpet">Trumpet</option>
+            <option value="xylophone">Xylophone</option>
+            <option value="drum">Drum</option>
+            <option value="harp">Harp</option>
+            <option value="marimba">Marimba</option>
+            <option value="steeldrums">Steel Drums</option>
+            <option value="conga">Conga</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="rhymeSelect">Select Rhyme:</label>
+          <select id="rhymeSelect" onchange="changeRhyme()">
+            <option value="none">No Rhyme</option>
+            <option value="twinkle">Twinkle Twinkle Little Star</option>
+            <option value="mary">Mary Had a Little Lamb</option>
+            <option value="row">Row, Row, Row Your Boat</option>
+            <option value="itsy">Itsy Bitsy Spider</option>
+            <option value="wheels">The Wheels on the Bus</option>
+            <option value="baa">Baa Baa Black Sheep</option>
+            <option value="hickory">Hickory Dickory Dock</option>
+            <option value="humpty">Humpty Dumpty</option>
+            <option value="jack">Jack and Jill</option>
+            <option value="old">Old MacDonald</option>
+            <option value="london">London Bridge</option>
+            <option value="hey">Hey Diddle Diddle</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <script>
+    let canvas, ctx;
+    let animationEnabled = true;
+    let gravity = 1;
+    let spawnRate = 5;
+    let spheres = [];
+    let audioContext;
+    let lastSpawnTime = 0;
+    let currentSoundType = 'harmonic';
+    let currentDimension = 4;
+    let ripples = [];
+    let currentRhyme = 'none';
+    let currentInstrument = 'sine';
+    const customInstruments = ['piano', 'guitar', 'violin', 'flute', 'trumpet', 'xylophone', 'drum', 'harp', 'marimba', 'steeldrums', 'conga'];
+    
+    const soundScales = {
+      harmonic: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25],
+      pentatonic: [261.63, 293.66, 329.63, 392.00, 440.00],
+      chromatic: [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88],
+      microtonal: [261.63, 270.00, 280.00, 290.00, 300.00, 310.00, 320.00, 330.00]
+    };
+    
+    const nurseryRhymes = {
+      twinkle: [261.63, 261.63, 392.00, 392.00, 440.00, 440.00, 392.00],
+      mary: [330.00, 293.66, 261.63, 293.66, 330.00, 330.00, 330.00],
+      row: [261.63, 293.66, 330.00, 293.66, 261.63, 330.00, 392.00],
+      itsy: [392.00, 440.00, 493.88, 493.88, 440.00, 392.00, 349.23],
+      wheels: [261.63, 293.66, 329.63, 329.63, 329.63, 293.66, 261.63],
+      baa: [392.00, 392.00, 329.63, 329.63, 293.66, 293.66, 261.63],
+      hickory: [392.00, 349.23, 329.63, 293.66, 261.63, 392.00, 392.00],
+      humpty: [392.00, 440.00, 392.00, 329.63, 261.63, 293.66, 329.63],
+      jack: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88],
+      old: [261.63, 261.63, 261.63, 329.63, 392.00, 392.00, 392.00],
+      london: [392.00, 440.00, 392.00, 349.23, 329.63, 293.66, 261.63],
+      hey: [329.63, 392.00, 440.00, 493.88, 523.25, 493.88, 440.00]
+    };
+    
+    class Sphere {
+      constructor(x, y, z, w) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.w = w;
+        this.radius = 5 + Math.random() * 10;
+        this.color = getRandomColor();
+        this.frequency = getRandomFrequency();
+        this.velocity = { x: 0, y: 0, z: 0, w: 0 };
+        this.rotation = { x: Math.random() * Math.PI, y: Math.random() * Math.PI };
+        this.rotationSpeed = { x: Math.random() * 0.05, y: Math.random() * 0.05 };
+        this.hasPlayed = false;
+      }
+    
+      draw() {
+        let scale = 1000 / (1000 - this.z);
+        let x2d = this.x * scale;
+        let y2d = this.y * scale;
+        let r2d = this.radius * scale;
+    
+        ctx.save();
+        ctx.translate(canvas.width/2 + x2d, canvas.height/2 + y2d);
+        ctx.rotate(this.rotation.x);
+        ctx.scale(1, Math.cos(this.rotation.y));
+    
+        ctx.beginPath();
+        ctx.arc(0, 0, r2d, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+    
+        let gradient = ctx.createRadialGradient(r2d/3, -r2d/3, 0, 0, 0, r2d);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+    
+        ctx.restore();
+      }
+    
+      update() {
+        this.velocity.y += gravity * 0.1;
+        this.x += this.velocity.x;
+        this.y += this.velocity.y;
+        this.z += this.velocity.z;
+        this.w += this.velocity.w;
+    
+        this.rotation.x += this.rotationSpeed.x;
+        this.rotation.y += this.rotationSpeed.y;
+    
+        if (this.y + this.radius > canvas.height / 2) {
+          this.y = canvas.height / 2 - this.radius;
+          this.velocity.y *= -0.8;
+          if (!this.hasPlayed) {
+            playSound(this.frequency);
+            this.hasPlayed = true;
+            createRipple(canvas.width/2 + this.x, canvas.height/2 + this.y, this.frequency);
+          }
+          this.color = getRandomColor();
+        }
+    
+        return (this.y < canvas.height + this.radius);
+      }
+    }
+    
+    class Ripple {
+      constructor(x, y, frequency) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = Math.min(canvas.width, canvas.height) * 0.4;
+        this.frequency = frequency;
+        this.speed = 5 + (frequency / 100);
+        this.opacity = 1;
+      }
+    
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsla(${this.frequency % 360}, 100%, 50%, ${this.opacity})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    
+      update() {
+        this.radius += this.speed;
+        this.opacity = 1 - (this.radius / this.maxRadius);
+        return this.opacity > 0;
+      }
+    }
+    
+    function init() {
+      canvas = document.createElement('canvas');
+      ctx = canvas.getContext('2d');
+      document.getElementById('canvas-container').appendChild(canvas);
+    
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+    
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+      animate();
+    }
+    
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    
+    function animate(currentTime) {
+      if (animationEnabled) {
+        ctx.fillStyle = 'rgba(0, 0, 51, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+        if (currentTime - lastSpawnTime > 1000 / spawnRate) {
+          spawnSphere();
+          lastSpawnTime = currentTime;
+        }
+    
+        spheres = spheres.filter(sphere => sphere.update());
+        spheres.forEach(sphere => sphere.draw());
+    
+        ripples = ripples.filter(ripple => ripple.update());
+        ripples.forEach(ripple => ripple.draw());
+    
+        document.getElementById('sphere-count').textContent = spheres.length;
+      }
+    
+      requestAnimationFrame(animate);
+    }
+    
+    function getRandomColor() {
+      return `hsl(${Math.random() * 360}, 100%, 50%)`;
+    }
+    
+    function getRandomFrequency() {
+      if (currentRhyme !== 'none' && nurseryRhymes[currentRhyme]) {
+        return nurseryRhymes[currentRhyme][Math.floor(Math.random() * nurseryRhymes[currentRhyme].length)];
+      } else {
+        let frequencies = soundScales[currentSoundType];
+        return frequencies[Math.floor(Math.random() * frequencies.length)];
+      }
+    }
+    
+    function spawnSphere() {
+      const x = (Math.random() - 0.5) * canvas.width;
+      const y = -canvas.height / 2;
+      const z = Math.random() * 500 - 250;
+      const w = currentDimension === 4 ? Math.random() * 500 - 250 : 0;
+      spheres.push(new Sphere(x, y, z, w));
+    }
+    
+    function playSound(frequency) {
+      if (customInstruments.includes(currentInstrument)) {
+        playSampleBasedInstrument(currentInstrument, frequency);
+      } else {
+        playOscillatorBasedInstrument(frequency);
+      }
+    }
+    
+    function playOscillatorBasedInstrument(frequency) {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = currentInstrument;
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    
+      const gainNode = audioContext.createGain();
+      gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+    
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+    
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 1);
+    }
+    
+    function playSampleBasedInstrument(instrument, frequency) {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const now = audioContext.currentTime;
+    
+      oscillator.frequency.setValueAtTime(frequency, now);
+    
+      switch(instrument) {
+        case 'piano':
+          oscillator.type = 'triangle';
+          gainNode.gain.setValueAtTime(0.5, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+          break;
+        case 'guitar':
+          oscillator.type = 'sawtooth';
+          gainNode.gain.setValueAtTime(0.3, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1);
+          break;
+        case 'violin':
+          oscillator.type = 'sine';
+          gainNode.gain.setValueAtTime(0.2, now);
+          gainNode.gain.linearRampToValueAtTime(0.3, now + 0.1);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+          break;
+        case 'flute':
+          oscillator.type = 'sine';
+          gainNode.gain.setValueAtTime(0.15, now);
+          gainNode.gain.linearRampToValueAtTime(0.2, now + 0.1);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+          break;
+        case 'trumpet':
+          oscillator.type = 'square';
+          gainNode.gain.setValueAtTime(0.3, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+          break;
+        case 'xylophone':
+          oscillator.type = 'sine';
+          gainNode.gain.setValueAtTime(0.5, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          break;
+        case 'drum':
+          oscillator.type = 'triangle';
+          oscillator.frequency.setValueAtTime(frequency / 2, now);
+          gainNode.gain.setValueAtTime(0.5, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+          break;
+        case 'harp':
+          oscillator.type = 'triangle';
+          gainNode.gain.setValueAtTime(0.3, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 2);
+          break;
+        case 'marimba':
+          oscillator.type = 'sine';
+          gainNode.gain.setValueAtTime(0.5, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+          break;
+        case 'steeldrums':
+          oscillator.type = 'sine';
+          gainNode.gain.setValueAtTime(0.4, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+          break;
+        case 'conga':
+          oscillator.type = 'triangle';
+          oscillator.frequency.setValueAtTime(frequency * 0.75, now);
+          gainNode.gain.setValueAtTime(0.7, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          break;
+      }
+    
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+    
+      oscillator.start(now);
+      oscillator.stop(now + 2);
+    }
+    
+    function createRipple(x, y, frequency) {
+      ripples.push(new Ripple(x, y, frequency));
+    }
+    
+    function toggleAnimation() {
+      animationEnabled = !animationEnabled;
+      const button = document.getElementById('animation-toggle');
+      if (animationEnabled) {
+        button.textContent = 'Pause Animation';
+        button.classList.remove('paused');
+      } else {
+        button.textContent = 'Resume Animation';
+        button.classList.add('paused');
+      }
+    }
+    
+    function changeGravity() {
+      gravity = parseFloat(document.getElementById('gravity').value);
+      document.getElementById('gravity-value').textContent = gravity.toFixed(1);
+    }
+    
+    function changeSpawnRate() {
+      spawnRate = parseInt(document.getElementById('spawnRate').value);
+      document.getElementById('spawn-rate-value').textContent = spawnRate;
+    }
+    
+    function changeSoundType() {
+      currentSoundType = document.getElementById('soundType').value;
+    }
+    
+    function changeInstrument() {
+      currentInstrument = document.getElementById('instrumentType').value;
+    }
+    
+    function toggleDimension() {
+      currentDimension = currentDimension === 3 ? 4 : 3;
+      document.getElementById('current-dimension').textContent = currentDimension + 'D';
+      document.getElementById('dimension-toggle').textContent = `Switch to ${currentDimension === 3 ? '4D' : '3D'}`;
+    }
+    
+    function changeRhyme() {
+      currentRhyme = document.getElementById('rhymeSelect').value;
+      document.getElementById('current-rhyme').textContent = currentRhyme === 'none' ? 'None' : currentRhyme.charAt(0).toUpperCase() + currentRhyme.slice(1);
+    }
+    
+    init();
+    </script>
+    </body></html>
